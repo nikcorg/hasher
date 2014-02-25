@@ -1,0 +1,240 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <title>Password hasher bookmarklet</title>
+    <script type="text/javascript" charset="utf-8">
+        // Store the hash and clear it.
+        var hash = document.location.hash || false;
+        document.location.hash = "";
+
+        // Create a table of contents jump navigation
+        function createPageNavigation() {
+            var headline  = document.getElementsByTagName('h1');
+            var subheads  = document.getElementsByTagName('h2');
+            var jumplist  = document.createElement('ol');
+
+            var spacedash = new RegExp('[ ]{1,}', 'g');
+            var whitelist = new RegExp('[^a-z-]', 'ig');
+
+            // Loop through all level 2 headings
+            for (var i = 0; i < subheads.length; i++) {
+                var id;
+                var listnode = document.createElement('li');
+
+                if (subheads[i].id == '') {
+                    // ID has no value, generate from text content
+                    id             = subheads[i].innerHTML.toLowerCase().replace(spacedash, '-').replace(whitelist, '');
+                    subheads[i].id = id;
+                } else {
+                    id = subheads[i].id;
+                }
+
+                listnode.innerHTML = '<' + 'a href="#' + id + '">' + subheads[i].innerHTML + '<' + '/a' + '>';
+                subheads[i].innerHTML = (i + 1) + '. ' + subheads[i].innerHTML;
+                jumplist.appendChild(listnode);
+
+                // Insert back to top link
+                var toplink  = document.createElement('p');
+                toplink.innerHTML = '<' + 'a href="#top">Top of page<' + '/a' + '>';
+                document.body.insertBefore(toplink, subheads[i]);
+            }
+
+            // Insert jumplist after first level 1 heading
+            jumplist.className = 'nav-jumplist';
+            document.body.insertBefore(jumplist, headline[0].nextSibling);
+
+            // Attempt to jump the browser to the correct spot
+            if (!!hash) {
+                document.location.hash = hash;
+            }
+        }
+    </script>
+
+    <style type="text/css" media="screen">
+        body {
+            font-family: verdana, arial;
+            font-size: 100%;
+            margin-left: 50px;
+            width: 600px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            background-color: #fd8;
+            font-family: Georgia, Times new roman, serif;
+            font-weight: normal;
+            margin-left: -16px;
+            padding: 4px 8px 4px 16px;
+        }
+        p {
+            line-height: 1.5em;
+        }
+        a:hover {
+            color: #f00;
+        }
+        a[href*="#fn"] {
+            margin-left: 0.2em;
+        }
+        dt {
+            margin-top: 2em;
+        }
+        dd {
+            margin-top: 1em;
+        }
+
+        ol.nav-jumplist {
+            background-color: #EAEAEE;
+            float: right;
+            font-size: 90%;
+            list-style-type: decimal;
+            margin-bottom: 1em;
+            margin-left: 1em;
+            margin-right: 0;
+            margin-top: 0;
+            padding-bottom: 2em;
+            padding-left: 2em;
+            padding-right: 2em;
+            padding-top: 2em;
+            width: 40%;
+        }
+        ol.nav-jumplist li {
+            margin-left: 2em;
+        }
+        p.hilight {
+            background-color: yellow;
+            padding: 10px;
+        }
+
+        .clear {
+            clear: both;
+            overflow: hidden;
+        }
+
+        sup {
+            line-height: 0;
+        }
+    </style>
+</head>
+<body id="hasher" onload="createPageNavigation()">
+<h1>One password to rule them all.</h1>
+<p><a name="top">A</a> <a href="http://en.wikipedia.org/wiki/Bookmarklet">bookmarklet</a> to create a salted hash<a href="#fn1"><sup>1</sup></a> of your password that is unique for every website you visit, thus increasing your security while still allowing you to keep your passwords few and simple.</p>
+
+<p><a href="javascript:<?php echo $minified ?>"><strong>Password hasher</strong></a> version <a href="#changelog"><?php echo $version ?></a>, updated <span class="date" title="<?php echo date('r', $modified) ?>"><?php echo date('M d Y', $modified) ?></span> (click to test, drag it to your bookmarks toolbar for keeps. It's <em>free</em>!)</p>
+
+<?php if ($_SERVER['REQUEST_METHOD'] == 'POST' && ! empty($_POST['salt'])): ?>
+    <p class="hilight clear">Salted! Grab the script from the <em>Password hasher</em> link above.</p>
+<?php else: ?>
+    <form action="" method="post" class="clear">
+        <p>Get a version with your own custom salt using this form:</p>
+        <p><label>Salt:<br><textarea name="salt" rows="3" cols="40"><?php echo $salt ?></textarea></label></p>
+        <p><label>Limit password length to <input type="text" size="4" value="<?php echo $limit ?>" name="limit"> characters.</label></p>
+        <p><button type="submit">Customize!</button></p>
+    </form>
+<?php endif; ?>
+
+<h2>Why do I need it?</h2>
+<p>Because you're lazy like most other people and use the same password across several websites.</p>
+<p>Worst case scenario? One of the websites you're using is compromised, which gives the cracker access to all the websites you're on. Like handing over the keys to your house, your office, your car and your bank account. With a smile on your face. And the worst part is you might be opening other peoples' doors as well in the process. Good security is good for everyone.</p>
+<p>Using this bookmarklet, you can still keep the same poor habit of recycling your password, but still have a unique password on each website you visit. And a tough one too. Even if you don't fit the profile described, it'll still (most likely) improve your password.</p>
+
+<h2>How does it work?</h2>
+<p>The script works by taking your password, combining it with a salt string and then creating a <a href="http://en.wikipedia.org/wiki/SHA-1">SHA-1</a> hash of the whole deal.</p>
+<p>The default salt is the hostname, but you can, and should<a href="#fn2"><sup>2</sup></a> change it by editing the saltstring<a href="#fn3"><sup>3</sup></a> located at the very beginning of the bookmarklet<a href="#fn4"><sup>4</sup></a>. The hostname of the website you're on is appended to your own salt, to keep password unique across websites. (Only the <abbr title="Top Level Domain">tld</abbr> and the first subdomain  is appended to the salt, so that websites like google.com (which has services on several hosts like mail.google.com etc.) will still work as expected.)</p>
+<p>Still, normal security measures should be applied. Don't give out your password to anyone, don't let anyone look over your shoulder when entering a password, don't write down your password where they can be easily found, etc.</p>
+
+<h2>The websites I use don't allow long enough passwords</h2>
+<p>Perhaps you should tell them not to restrict password length.</p>
+<p>But seriously, even if you cut the password short, it will still be a string of jibberish and more secure than <em>scruffythedog</em>, <em>cheesypeas</em> or <em>bigmember69</em>.</p>
+<p>Since version 1.5 password hasher allows you to limit the length of the generated hash.</p>
+
+<h2>Will this reveal all my passwords to you?</h2>
+<p>No.</p>
+<p>The bookmarklet is stored and executed locally in your browser. No information is sent over the internet by it.</p>
+<p>You don't need to take my word for it, the <a href="#source">source code</a> is provided below for you to examine.</p>
+
+<h2>Ok, you convinced me. How do I use it?</h2>
+<p>Start by testing that it works in your browser by clicking on the <em>Password hasher</em>-link at the <a href="#top">top</a>. If it does, drag the bookmarklet into your bookmarks toolbar. Then you can start using better passwords simply by clicking on the bookmark when logging in<a href="#fn2"><sup>2</sup></a><a href="#fn3"><sup>3</sup></a><a href="#fn4"><sup>4</sup></a>. (You'll of course have to change your password first, by using the bookmarklet on the change password page of each website.)</p>
+<p>By default, the script will enter the hashed password into a password input on the current webpage. If the script detects multiple password inputs, the script fills all password fields, while still attempting not to fill password fields that should contain your previous password. If the current page contains only one single password field, the form is automatically submitted<a href="#fn5"><sup>5</sup></a> upon password generation.</p>
+<p>Also, if either multiple or no password inputs are found, you are prompted with the generated password. <del datetime="<?php echo date('c', mktime(16, 54, 0, 12, 22, 2009)) ?>">Unfortunately, not all browsers will allow you to copy<a href="#fn6"><sup>6</sup></a> the generated hash from the message box. At least <a href="http://getfirefox.com/">Firefox</a> (select and copy), <a href="http://www.apple.com/safari">Safari (Mac)</a> (select and copy), <a href="http://www.opera.com/download/">Opera</a> (select and copy) and <a href="http://google.com/chrome/">Chrome</a> (copy) do, though. Currently there are no plans to change the way the hash is displayed to the user, but you can do that yourself if you wish, the source is provided below.</del> <ins datetime="<?php echo date('c', mktime(16, 54, 0, 12, 22, 2009)) ?>">The generated password is presented in a hovering layer dynamically created.</ins></p>
+<p>On some browsers (at least Safari and <a href="http://microsoft.com/ie">IE</a>) it is also possible to assign a keyboard shortcut to the bookmark to make usage even simpler, and for those browsers that don't support it natively, there might be plugins: <a href="https://addons.mozilla.org/en-US/firefox/addon/3647">Firefox plugin</a>, <a href="https://chrome.google.com/extensions/detail/mgjjeipcdnnjhgodgjpfkffcejoljijf">Chrome plugin</a>.</p>
+
+<h2>Are there any downsides?</h2>
+<p>Not many.</p>
+<p><del datetime="<?php echo date('c', mktime(16, 54, 0, 12, 22, 2009)) ?>">It <em>might</em> be slightly inconvenient if you need your current password<a href="#fn7"><sup>7</sup></a> when changing passwords, unless you can copy the current password from the alert dialog.</del></p>
+<p>Copying your new password to your mobile device might prove a bit cumbersome. Changing your secret "on the fly"<a href="#fn8"><sup>8</sup></a> requires a few tricks also.</p>
+<p>While possible, using the bookmarklet on a public machine will most likely be inconvenient.</p>
+<p>Long story short, you'll have a miserable time logging in if you don't have access to the bookmarklet. If you can carry a portable browser with you (e.g. on a thumb drive) you'll be home free on any computer.</p>
+
+<h2>License</h2>
+<p>The bookmarklet is provided as is, free of charge, for personal, commercial or any other use. If you create derivative work or redistribute, you must also adhere to the license of the included SHA-1 algorithm implementation. (See <a href="#source">the source</a> for more info.)</p>
+<p>I, the author, take no responsibility for loss of passwords, time, money, hair or car keys. That responsibility lies on you, the end user, entirely.</p>
+<p>In short, it's covered by the <a href="http://www.wtfpl.net/about">WTFPL</a></p>
+
+<h2>Will it work in my browser?</h2>
+<p>The bookmarklet has been tested and found to be working in Firefox 3.5 (Win/Mac), Safari 4 (Mac), Opera 9.6/10.10 (Win) and Chrome (Win).</p>
+<p>Safari 4 (Win) works, but doesn't let me edit the secret, <ins>but now there's a form at the top to help you with that</ins>.</p>
+<p><abbr title="Internet Explorer">IE</abbr> (Win) didn't wan't to play nice, which doesn't mean it won't work, just that I don't need it to do so and didn't go through the trouble to fix it. (Not yet, anyway. <del datetime="<?php echo date('c', mktime(16, 54, 0, 12, 22, 2009)) ?>">It might happen.</del>) <ins datetime="<?php echo date('c', mktime(16, 54, 0, 12, 22, 2009)) ?>">I've later learned the reason is because the bookmark address is too long for some IE versions, and disabled javascript features in other versions of IE, so don't hold your breath. Switch browsers instead.</ins></p>
+<p>Click the <em>Password hasher</em>-link at the <a href="#top">top</a> to find out if it works. (You should be seeing an input dialog after the click and a generated password after OK.)</p>
+
+<h2>Footnotes</h2>
+<div id="footnotes">
+    <dl>
+        <dt id="fn1"><sup>1</sup> What is a hash?</dt>
+        <dd>In simple terms, a hash is a one way message digest, i.e. it is not possible to calculate the input from the output. Find out more by reading the <a href="http://en.wikipedia.org/wiki/Hash">Wikipedia article</a>. This bookmarklet uses the <a href="http://en.wikipedia.org/wiki/SHA_hash_functions#SHA-0_and_SHA-1">SHA-1</a> algorithm.</dd>
+
+        <dt id="fn2"><sup>2</sup> Why do I need to change the salt?</dt>
+        <dd>If the salt is known (such as the default salt), the hash algorithm is known, and your base password is compromised, a hashed password is none safer than the unhashed version. If the salt is unknown, your password is still safe. But none the less, keep your password secret <em>always</em> applies no matter what kind of cryptography you paste on top of it! Still, the hashed version will protect you against most basic attacks, such as <a href="http://en.wikipedia.org/wiki/Dictionary_attack">dictionary attacks</a>, even if you don't customize the salt.</dd>
+
+        <dt id="fn3"><sup>3</sup> What kind of salt is a good one then?</dt>
+        <dd>Well, any kind, but the more random, the better. Which doesn't mean it should change every time. In order to be able to recreate the password, the salt needs to be known. A salt can be pretty much anything, e.g. <code>My dog Scruffy likes biscuits, and so do I, but not the same kind of biscuits, mind you. I prefer chocolate chip while he prefers chipmunk flavoured.</code></dd>
+
+        <dt id="fn4"><sup>4</sup> Ok, how do I change the salt?</dt>
+        <dd>Edit the bookmark: change the part which says: <pre><code>var salt = 'my secret salt';</code></pre>, but <strong>only</strong> the text between the hyphens. Or you can <a href="#top">use the provided form</a>.</dd>
+
+        <dt id="fn5"><sup>5</sup> Why the automatic submit?</dt>
+        <dd>Just a convenience. I'm too lazy to use both the bookmarklet and manually submit and would cease using the bookmarklet. That would mean going back to letting my browser remember my passwords. This way, I can stay secure without (much) extra trouble. I assume others are equally lazy and this feature will be welcomed with open arms.</dd>
+
+        <dt id="fn6"><sup>6</sup> How do I copy text from an alert box?</dt>
+        <dd>Some browsers, e.g. Firefox, will allow you to select text in the alert box and copy it as you would any text. Some others, like Chrome, will copy all of the text in the alert box when you press ctrl+c. You can then paste it into any text editing software. Then there are those that won't allow it. Try and you shall see.</dd>
+
+        <dt id="fn7"><sup>7</sup> How can I find out my generated password for website X?</dt>
+        <dd>Log in to website X as you would normally. When logged in, click the bookmarklet and enter you password. When there are (presumably) no password fields present, the password will be shown to you in a dialog, from which you can copy<a href="#fn6"><sup>6</sup></a> the password.</dd>
+
+        <dt id="fn8"><sup>8</sup> What about when I want to change my secret when I'm already using the bookmarklet?</dt>
+        <dd>Not a problem, it just requires some extra work, but since this is not something you'll be doing very often, it should be fine.</dd>
+        <dd>To change your secret on the fly, you'll need to make a new copy of the bookmarklet. The existing copy will hold your old secret, the new copy will hold your new secret. This way, you can still log in to all the websites you need to, to change your password, but will still be able to generate a new password with the second bookmarklet. When all your passwords have been changed, you can delete the bookmarklet with the old secret.</dd>
+    </dl>
+</div>
+
+<h2 id="source">Source code</h2>
+<p>If you change the code, you need to <a href="http://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_reserved_characters">replace % with %25</a>, and <a href="https://www.google.com/search?q=javascript+minifier">minify</a> it, before it can be used as a bookmarklet.</p>
+
+<form action=""><div><textarea cols="120" rows="40"><?php include $hasher_source ?></textarea></div></form>
+
+<h2 id="changelog">Changelog</h2>
+
+<dl>
+    <dt>1.7</dt>
+    <dd>Added checkbox for manually preventing autosubmit</dd>
+    <dd>Added z-index resolver to ensure the dialog is above page content</dd>
+    <dd>Use <code>location.hostname</code> instead of <code>location.host</code> to avoid including port numbers in the salt. NB! This may break passwords in use</dd>
+    <dd>Minor code cleanup</dd>
+    <dt>1.6</dt>
+    <dd>Added "no SLD awareness" for certain TLD's</dd>
+    <dd>Various micro-optimizations</dd>
+    <dt>1.5</dt>
+    <dd>Added option to restrict hash length</dd>
+    <dt>1.4</dt>
+    <dd>Minor tweak. A password input is now also focused on pages with multiple password inputs. (The form is not submitted.) Universally working <em>hash + hit enter to login</em> still not achieved though.</dd>
+    <dt>1.3</dt>
+    <dd>Replaced the <code>window.prompt</code>, which showed your password in plain text to anyone standing behind you, with a custom password input dialog</dd>
+    <dt>1.2</dt>
+    <dd>Replaced the <code>window.alert</code>, used to display the password hash in some cases, with a custom dialog, to enable copyable content in any client</dd>
+    <dt>1.1</dt>
+    <dd>Tweaks and polish</dd>
+    <dt>1.0</dt>
+    <dd>Initial release</dd>
+</dl>
+
+</body>
+</html>

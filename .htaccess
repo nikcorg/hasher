@@ -1,0 +1,2 @@
+RewriteEngine on
+RewriteRule hasher.html hasher.php [L]
